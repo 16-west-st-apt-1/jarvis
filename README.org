@@ -124,6 +124,7 @@ All files mentioned below /must be modified/ to reflect your environment's file 
 3. Add your OpenAI ChatGPT API key to =~/.config/shell_gpt/.sgptrc=.
 4. Find your =alsa= hardware card with =sudo arecord -l=. Modify line 9 (=-i hw:3=) of =record-audio-snippet.sh= to reflect your card number (change the =3=).
 ** Usage
-1. Execute =run.sh=.
-2. You have 5 seconds to say something to ChatGPT.
-3. Wait for the system to speak the response.
+1. Enter the virtual environment (in =.venv=)
+2. Execute =run.sh=.
+3. You have 5 seconds to say something to ChatGPT.
+4. Wait for the system to speak the response.
