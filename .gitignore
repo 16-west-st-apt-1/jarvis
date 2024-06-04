@@ -1,4 +1,4 @@
 .venv
 *.txt
 *.wav
-piper-voices
+*.onnx*
