@@ -1,16 +1,129 @@
 * Voice Assistant
-** Audio Recording
-*** DONE Write record-audio-snippet.sh
-Record audio from USB microphone to wav file with ffmpeg.
-*** TODO Personal voice Recognition
-** Voice to Text
-*** TODO Write voice-to-text.sh
-- [ ] take wav file and transcribe using Vosk
-** ChatGPT Query
-** Text to Speech
-** Master Run Script
+Goal: a home assistant to ease home-related data storage and processing and potentially provide automation.
+
+Named "Jarvis" for clarity, since we all know what Jarvis is.
+
+Use cases:
+- integrate with our roommate API
+  - track chores
+  - items to purchase
+  - rent, utilities, and bills
+  - who owes who
+- oversee roommate blockchain
+- automation (lights, locks, fridge camera)
+- voice-based internet searches
+- it's just cool to have
+** Components
+*** Audio Recording
+**** Snippet
+=record-audio-snippet.sh=: record 5s of audio from USB microphone to wav file with ffmpeg.
+**** Continuous with Activation
+Ideally we have Jarvis listen to everything and watch for start/stop (activation/deactivation) phrases.
+**** Personal voice recognition
+A good way to prevent random access to Jarvis is to limit access for a generic voice while offering privileged access to recognized voices.
+*** STT
+=voice-to-text.sh=: uses =vosk-transciber= for fast, high-quality, and local STT.
+*** LLM Query
+The =shell-gpt= program offers a fully fledged CLI to the ChatGPT API.
+
+Ideally, we'd run a local LLM for privacy.
+*** Text to Speech
+=text-to-speech-piper.sh=: text input file to =wav= output file with =piper= TTS.
+=piper=: fast, high-quality, and local TTS optimized for Raspberry Pi 4.
+*** Audio Playing
+Currently using Alsa (=sudo aplay=), cause it just works.
+*** Master Run Script
 Runs, in this order:
-1) Audio recording: record-audio-snippet.sh
-2) Voice to Text: voice-to-text.sh
-3) ChatGPT Query:
-4) Piper Text to Speech: speak-text-with-piper.sh
+1) Audio recording: =record-audio-snippet.sh=
+2) STT: =voice-to-text.sh=
+3) LLM Query
+4) TTS
+
+=run.sh= currently stores the audio recording in =prompt.wav=. The STT writes to =prompt-transcript.txt=. This file is sent to shell-gpt (=sgpt=). =sgpt= streams its output one word at a time, so this can be sent to =piper=. =piper=, in turns, can output raw audio data, and this is streamed to the speaker (to =aplay=).
+
+Visualized:
+1. Microphone -> file (=wav=)
+2. =vosk= STT -> file (=txt=)
+3. =sgpt= LLM -> =piper= -> =aplay=
+
+Note that a header is added to the transcribed prompt. This is on top of shell-gpt's header.
+#+begin_src
+Answer like a home assistant. Do not use newlines in responses. Do not use markdown formatting. Present lists with a colon and identify list items with numbers and divide list items with semicolons.
+#+end_src
+** Roadmap
+*** General
+**** Move everything to Python
+While Bash is great for simple prototyping, we'll probably need to use Python -- or some other language, if it's better:
+1. More robust, as a language. Allows convenient type hints, checks, etc.
+2. Necessary for real-time operation. While =vosk-transcriber= can only write to a file instead of being piped to another program, its output bytes can be processed in chunks in Python, allowing for quasi-continuous processing.
+3. Clearer and more advanced control flow.
+**** Look into Pi alternatives
+1. Can the Pi 4 provide enough CPU and GPU power to be fast, let's say <10s for 80% of questions, and <5s for 80% of commands.
+2. Would an old Thinkpad have enough processing power? How does this price compare to adding another Pi, or some time of compute module/GPU? What about compared with the Pi 5 (which has custom silicon)?
+*** Audio Recording
+**** Continuous with Activation
+Ideally we have Jarvis listen to everything and watch for start/stop (activation/deactivation) phrases.
+***** TODO Find, evaluate, and choose voice activation software
+**** Personal voice recognition
+A good way to prevent random access to Jarvis is to limit access for a generic voice while offering privileged access to recognized voices.
+**** Multi-room microphones
+Can we have microphones in multiple rooms? Would we have to process these in parallel for true, real-time voice activation?
+*** STT
+**** TODO Look into Vosk alternatives
+Vosk seems to work fine for STT, but there's not much documentation. Also, it requires some hacking to get "real-time" data output. Is there another STT engine that is fast, high-quality, local, and real-time? If so, we should use that.
+***** Whisper (OpenAI)
+OpenAI does have Whisper, and I think this can run locally, so it wouldn't be a privacy issue (though we're sending them the same data via ChatGPT).
+
+1. Speed?
+2. Quality?
+3. Local?
+4. Real-time?
+5. Python bindings?
+6. Documentation?
+*** LLM Query
+**** TODO Look into local LLMs
+1. Can we run an LLM on a Pi 4?
+2. Assuming the Pi 4 can run the LLM, will the LLM be any good?
+3. Are there pre-trained home assistant LLMs?
+4. ChatGPT
+   a. What integration does ChatGPT have with CSV files and other data types?
+   b. Can shell-gpt preserve context and ask the same "GPT" another question (I think it can)?
+   c. Can ChatGPT reliably store data? If we ask it to add and remove key-value pairs of residents and chores, can it do this with 100% accuracy?
+5. Will we have to offload all data tracking and processing to the API, or some other software, because the LLM won't be able to accurately track or process data? That is, can we only trust the LLM for offering a natural language representation of data (e.g. "tell me my chores")?
+**** TODO Look into making ChatGPT responses faster
+Compared with STT and TTS, the ChatGPT API query is the time bottleneck. How can we make its response faster? Is GPT 4 (or the upcoming 5) faster? Are paid tiers faster?
+*** Text to Speech
+Probably stick with =piper=, since it's optimized for Pi 4 and is used in similar home assistant projects.
+*** Audio Playing
+Currently using Alsa (=sudo aplay=), cause it just works. May need to explore Bluetooth connections and multiple speakers.
+
+Having trouble integrating pulseaudio and playing sound over bluetooth with multiple users.
+*** Master Run Script
+**** TODO Create multi-threaded daemon(s)
+For continuous audio recording we'll need something that's always running. To incorporate start and stop keywords and different voices we'll need multiple threads. Following the Unix philosophy, we'll probably want one program to listen for voice triggers and another program to carry out triggered events.
+
+Any event that will result in Jarvis saying something should be put in a queue. This will prevent Jarvis from trying to say multiple things at once. Also, it allows for proper event management if a user tells Jarvis to stop doing something.
+* Repo Structure
+All =txt= and =wav= files are gitignored because they might contain private information. Piper voices and config files are stored in =piper-voices/=, but these are not committed because it quickly grows to 100s of MB.
+* Installation
+Jarvis has only been tested on the latest version of Raspberry Pi OS (Debian 12, Linux 6.6, 64-bit).
+
+All files mentioned below /must be modified/ to reflect your environment's file paths.
+** Hardware
+1. Microphone
+2. Speaker
+** Dependencies
+1. =ffmpeg=
+2. =vosk-transcriber=
+3. =shell-gpt=
+4. =piper=
+5. =aplay=
+** Install
+1. Clone this repo.
+2. Download the "danny" or "ljspeech" voices and config files into =piper-voices=.
+3. Add your OpenAI ChatGPT API key to =~/.config/shell_gpt/.sgptrc=.
+4. Find your =alsa= hardware card with =sudo arecord -l=. Modify line 9 (=-i hw:3=) of =record-audio-snippet.sh= to reflect your card number (change the =3=).
+** Usage
+1. Execute =run.sh=.
+2. You have 5 seconds to say something to ChatGPT.
+3. Wait for the system to speak the response.

@@ -12,12 +12,12 @@ PROMPT_HEADER="Answer like a home assistant. Do not use newlines in responses.\
     list items with numbers and divide list items with semicolons."
 
 # Record audio
-echo -e "\n\nRECORDING AUDIO...\n\n"
+echo -e "\nRECORDING AUDIO...\n"
 sudo ./record-audio-snippet.sh "$AUDIO_SNIPPET_TIME"
 #clear
 
 # Voice to Text, puts text in ./prompt-transcript.txt
-echo -e "\n\nSPEECH TO TEXT...\n\n"
+echo -e "\nSPEECH TO TEXT...\n"
 ./voice-to-text.sh ./prompt.wav
 
 # Add ChatGPT header to prompt transcript.
@@ -25,11 +25,11 @@ sed -i "1s/^/$PROMPT_HEADER\n/" ./prompt-transcript.txt
 #clear
 
 # Stream ChatGPT query to piper then to aplay.
-echo -e "\n\nSTREAMING TEXT TO CHAPTGPT AND STREAMING TEXT TO SPEECH RESPONSE TO APLAY...\n\n"
+echo -e "\nSTREAMING TEXT TO CHAPTGPT AND STREAMING TEXT TO SPEECH RESPONSE TO APLAY...\n"
 cat ./prompt-transcript.txt | sgpt | piper --model "piper-voices/en_US-amy-low.onnx" --output-raw | sudo aplay -r 16000 -f S16_LE -t raw -
 #clear
 
-echo -e "\n\nDONE.\n\n"
+echo -e "\nDONE.\n"
 
 # Piper text to speech all-in-one
 # ./speak-text-with-piper.sh lj "./gpt-response.txt"
