@@ -1,0 +1,16 @@
+* Voice Assistant
+** Audio Recording
+*** DONE Write record-audio-snippet.sh
+Record audio from USB microphone to wav file with ffmpeg.
+*** TODO Personal voice Recognition
+** Voice to Text
+*** TODO Write voice-to-text.sh
+- [ ] take wav file and transcribe using Vosk
+** ChatGPT Query
+** Text to Speech
+** Master Run Script
+Runs, in this order:
+1) Audio recording: record-audio-snippet.sh
+2) Voice to Text: voice-to-text.sh
+3) ChatGPT Query:
+4) Piper Text to Speech: speak-text-with-piper.sh
